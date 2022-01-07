@@ -150,6 +150,8 @@ namespace NorthLab.Effects
         private FilterMode oldFilterMode;
         private CameraSettings oldSettings;
         private CameraSettings newSettings;
+        private IEnumerator coroutine;
+        private bool quitting;
 
         private const string FallbackShader = "Unlit/Texture";
         private const string FallbackMainTexture = "_MainTex";
@@ -194,15 +196,21 @@ namespace NorthLab.Effects
             {
                 DisplayCamera.gameObject.SetActive(true);
                 newSettings.SetToCamera(RenderCamera);
+                CheckForChanges(true);
+                StartCoroutine(coroutine);
             }
         }
 
         private void OnDisable()
         {
+            if (quitting)
+                return;
+
             if (Initialized)
             {
                 DisplayCamera.gameObject.SetActive(false);
                 oldSettings.SetToCamera(RenderCamera);
+                StopCoroutine(coroutine);
             }
         }
 
@@ -228,13 +236,19 @@ namespace NorthLab.Effects
             DisplayCamera.transform.rotation = RenderCamera.transform.rotation;
         }
 
+        private void OnApplicationQuit()
+        {
+            quitting = true;
+        }
+
         private void Init()
         {
             if (Initialized)
                 return;
 
             UpdateFPS();
-            StartCoroutine(RenderToTexture());
+            coroutine = RenderToTexture();
+            StartCoroutine(coroutine);
 
             if (DisplayLayer == null)
             {
@@ -316,6 +330,9 @@ namespace NorthLab.Effects
         private void CheckForChanges(bool render)
         {
             ValidateValues();
+
+            if (!enabled)
+                return;
 
             bool changed = false;
             if (filterMode != oldFilterMode || oldHeight != targetHeight || (oldScreenWidth != Screen.width || oldScreenHeight != Screen.height))
