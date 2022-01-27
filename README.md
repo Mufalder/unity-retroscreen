@@ -13,3 +13,6 @@ RetroScreen is a fast and lightweight solution that allows you to achieve a low-
 
 ## How does it work?
 When you press play, the script creates a new camera that will render only a specific layer. Then it also creates a quad mesh in front of this camera and renders the render texture from the main camera to it. So you got two cameras, the main camera or “Render Camera”, which actually is disabled and only renders to the texture, and the second camera “Display Camera” that renders quad with texture. It may be difficult at first glance, but it's actually easier than it sounds.
+
+## External links
+[Unity Asset Store](https://assetstore.unity.com/packages/vfx/shaders/fullscreen-camera-effects/retroscreen-210736)
