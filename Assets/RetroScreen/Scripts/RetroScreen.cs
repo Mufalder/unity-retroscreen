@@ -7,6 +7,9 @@ namespace NorthLab.Effects
     public class RetroScreen : MonoBehaviour
     {
 
+        /// <summary>
+        /// Struct to save camera settings.
+        /// </summary>
         private struct CameraSettings
         {
 
@@ -150,8 +153,9 @@ namespace NorthLab.Effects
         private FilterMode oldFilterMode;
         private CameraSettings oldSettings;
         private CameraSettings newSettings;
-        private IEnumerator coroutine;
         private bool quitting;
+
+        public float FrameRenderTimestamp { get; private set; }
 
         private const string FallbackShader = "Unlit/Texture";
         private const string FallbackMainTexture = "_MainTex";
@@ -197,7 +201,6 @@ namespace NorthLab.Effects
                 DisplayCamera.gameObject.SetActive(true);
                 newSettings.SetToCamera(RenderCamera);
                 CheckForChanges(true);
-                StartCoroutine(coroutine);
             }
         }
 
@@ -210,7 +213,6 @@ namespace NorthLab.Effects
             {
                 DisplayCamera.gameObject.SetActive(false);
                 oldSettings.SetToCamera(RenderCamera);
-                StopCoroutine(coroutine);
             }
         }
 
@@ -247,8 +249,6 @@ namespace NorthLab.Effects
                 return;
 
             UpdateFPS();
-            coroutine = RenderToTexture();
-            StartCoroutine(coroutine);
 
             if (DisplayLayer == null)
             {
@@ -295,7 +295,6 @@ namespace NorthLab.Effects
 
             DisplayCamera = new GameObject("DisplayCamera").AddComponent<Camera>();
             DisplayCamera.transform.tag = "MainCamera";
-            //DisplayCamera.transform.position = Vector3.up * 1000;
             DisplayCamera.clearFlags = CameraClearFlags.Depth;
             DisplayCamera.cullingMask = 1 << DisplayLayer.Value;
             DisplayCamera.orthographic = true;
@@ -303,6 +302,8 @@ namespace NorthLab.Effects
             DisplayCamera.farClipPlane = 5;
             DisplayCamera.allowHDR = false;
             DisplayCamera.allowMSAA = false;
+            RetroScreenCameraAnchor rsca = DisplayCamera.gameObject.AddComponent<RetroScreenCameraAnchor>();
+            rsca.Main = this;
 
             if (!Shader.Find(shaderName))
             {
@@ -419,6 +420,28 @@ namespace NorthLab.Effects
                     yield return new WaitForEndOfFrame();
                     RenderCamera.Render();
                 }
+            }
+        }
+
+        //Instead of using Coroutine to render texture, now render calls will be sent to the
+        //OnPreRender method to possibly minimize render delays.
+        public void ScheduleRender()
+        {
+            if (!Initialized)
+                return;
+
+            if (overrideFPS)
+            {
+                if (Time.unscaledTime - FrameRenderTimestamp >= Delay)
+                {
+                    RenderCamera.Render();
+                    onFrameRendered?.Invoke(this);
+                    FrameRenderTimestamp = Time.unscaledTime;
+                }
+            }
+            else
+            {
+                RenderCamera.Render();
             }
         }
 

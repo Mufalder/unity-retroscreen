@@ -1,0 +1,1 @@
+This scene demonstrates the precision of the OverrideFPS feature or any lack of it. Build the project with this scene and look at the FPS difference, especially with the Vsync(Num+ and Num- to toggle Vsync), you will see how inconsistent this feature is. So use it very carefully.
